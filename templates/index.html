@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CBSE Study Planner</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        h1 { color: #333; }
+        .subject { margin-bottom: 20px; padding: 15px; background: #e9f4ff; border-radius: 8px; }
+        .subject h3 { margin-top: 0; color: #007bff; }
+        form { margin-bottom: 10px; }
+        input[type="text"] { padding: 8px; width: 250px; }
+        button { padding: 8px 16px; background: #28a745; color: white; border: none; cursor: pointer; margin-left: 5px; }
+        button:hover { background: #218838; }
+        ul { list-style: none; padding-left: 20px; }
+        li { padding: 5px; background: #f8f9fa; margin: 3px 0; border-radius: 3px; }
+        .add-subject { background: #007bff; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🔥 CBSE Class 12 Study Planner</h1>
+    
+    <form method="POST" class="add-subject">
+        <input type="text" name="subject" placeholder="New Subject (Physics, Chemistry...)" required>
+        <button type="submit">➕ Add Subject</button>
+    </form>
+    
+    {% for subject in subjects %}
+        <div class="subject">
+            <h3>📚 {{ subject.name }}</h3>
+            <ul>
+                {% for chapter in subject.chapters %}
+                    <li>📖 {{ chapter.name }}</li>
+                {% endfor %}
+            </ul>
+            <form method="POST">
+                <input type="hidden" name="subject_id" value="{{ subject.id }}">
+                <input type="text" name="chapter" placeholder="Chapter name (e.g. Chemical Kinetics)">
+                <button type="submit" name="chapter">➕ Add Chapter</button>
+            </form>
+        </div>
+    {% endfor %}
+    
+    {% if not subjects %}
+        <p>Add your first subject above! 🎯</p>
+    {% endif %}
+</body>
+</html>
