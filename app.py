@@ -27,12 +27,6 @@ class Chapter(db.Model):
     name = db.Column(db.String(100))
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'))
 
-class Task(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
-    youtube_link = db.Column(db.String(200))
-    chapter_id = db.Column(db.Integer, db.ForeignKey('chapter.id'))
-
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -88,6 +82,53 @@ def login():
     <a href="/register">Register</a>
     '''
 
+@app.route('/subject/<int:subject_id>', methods=['GET', 'POST'])
+@login_required
+def subject_detail(subject_id):
+    subject = Subject.query.get(subject_id)
+    if not subject or subject.user_id != current_user.id:
+        return 'Not found', 404
+    
+    if request.method == 'POST':
+        chapter_name = request.form['chapter_name']
+        if chapter_name:
+            chapter = Chapter(name=chapter_name, subject_id=subject_id)
+            db.session.add(chapter)
+            db.session.commit()
+        return redirect(url_for('subject_detail', subject_id=subject_id))
+    
+    chapters = Chapter.query.filter_by(subject_id=subject_id).all()
+    html = '''
+    <style>
+        body { font-family: Arial; margin: 20px; background: #f5f5f5; }
+        h2 { color: #2c3e50; }
+        .form { background: white; padding: 15px; margin: 15px 0; border: 2px solid #3498db; border-radius: 5px; }
+        input, button { padding: 8px; margin: 5px; }
+        button { background: #27ae60; color: white; border: none; cursor: pointer; border-radius: 3px; }
+        button:hover { background: #229954; }
+        ul { background: white; padding: 15px; border-radius: 5px; }
+        li { padding: 8px; margin: 5px 0; }
+        a { color: #008CBA; text-decoration: none; }
+    </style>
+    <h2>''' + subject.name + '''</h2>
+    <div class="form">
+        <h3>Add Chapter</h3>
+        <form method="post">
+            Chapter Name: <input name="chapter_name" placeholder="Ch1 Kinetics...">
+            <button type="submit">Add Chapter</button>
+        </form>
+    </div>
+    <h3>Chapters</h3>
+    <ul>
+    '''
+    for ch in chapters:
+        html += '<li>' + ch.name + '</li>'
+    html += '''
+    </ul>
+    <a href="/">Back to Subjects</a>
+    '''
+    return html
+
 @app.route('/')
 @login_required
 def home():
@@ -99,6 +140,7 @@ def home():
         .container { max-width: 1000px; margin: 0 auto; }
         .subject { background: #3498db; color: white; padding: 15px; margin: 10px 0; border-radius: 5px; cursor: pointer; }
         .subject:hover { background: #2980b9; }
+        .subject a { color: white; text-decoration: none; display: block; }
         .subject-form { background: white; padding: 15px; margin: 20px 0; border: 2px solid #3498db; border-radius: 5px; }
         input, button { padding: 8px; margin: 5px; }
         button { background: #27ae60; color: white; border: none; cursor: pointer; border-radius: 3px; }
@@ -112,7 +154,7 @@ def home():
         <div class="subject-form">
             <h3>Add Subject</h3>
             <form method="post" action="/add_subject">
-                Subject Name: <input name="subject_name" placeholder="Physics, Chemistry, Maths...">
+                Subject Name: <input name="subject_name" placeholder="Physics, Chemistry, Maths..." required>
                 <button type="submit">Add Subject</button>
             </form>
         </div>
@@ -120,9 +162,11 @@ def home():
         <h2>Your Subjects</h2>
     '''
     for subject in subjects:
-        html += '<div class="subject">' + subject.name + '</div>'
-    html += '<br><a href="/logout"><button class="logout">Logout</button></a>'
-    html += '</div>'
+        html += '<div class="subject"><a href="/subject/' + str(subject.id) + '">' + subject.name + '</a></div>'
+    html += '''
+        <br><a href="/logout"><button class="logout">Logout</button></a>
+    </div>
+    '''
     return html
 
 @app.route('/add_subject', methods=['POST'])
